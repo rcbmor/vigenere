@@ -1,0 +1,121 @@
+Cryptography - coursework #1
+
+- Given one ciphertext find the plaintext
+- Write a two pages report explaining how the cryptoanalysis was done and part of the ciphertext and the plaintext.
+
+= Cryptoanalysis - breaking the indecipherable cipher
+
+This encryption method was originally described by Giovan Battista Bellaso in his 1553, later misattributed to Blaise de Vigenère in the 19th century, and is now widely known as the "Vigenère cipher" [1]. 
+This is a simple form of polyalphabetic substitution cipher that resisted attempts to break it for 300 years, this earned it the description "the indecipherable cipher".
+We will describe how simple cryptoanalysis techniques can be used to decipher Vigenere ciphertext and explain some basic concepts of cryptography.
+
+== Understanding substitution ciphers
+
+A substitution cipher encodes each character of the plaintext message with a ciphertext unit accordingly to a regular system [2]. For a simple substitution cipher, one could use a ciphertext alphabet that will map each plaintext unit to a corresponding ciphertext unit. The ciphertext alphabet can be generated based on a keyword with repeated letters removed, then write the other remaining letters as the example below:
+
+ Keyword: secret => SECRT
+ Plaintext alphabet:	 ABCDEFGHIJKLMNOPQRSTUVWXYZ
+ Ciphertext alphabet: SECRTABDFGHIJKLMNOPQUVWXYZ
+ Plaintext message: a stitch in time saves nine
+ Ciphertext message: s pqfqcd fk qfjt psvtp kfkt 
+
+One very known is the Caesar cipher where the ciphertext alphabet is shifted by a number of positions. For example, using a shift of 5, would give us: A = F, B = G, C = H, .., Z = E.
+
+An interesting aspect is that we can represent the encryption using modular arithmetic by transforming the letters into numbers: A=0, B=1, ..., Z=25 [3]:
+ E_n(x) = (x + n) mod 26 , encrypt x with n shifted alphabet.
+ D_n(x) = (x - n) mod 26.
+
+The problem with simple substitution ciphers is that there are only 26 possible ciphertext alphabets or shifts. One can easily compute the plaintext with exhaustive search. Another approach is to match up the frequency distribution of the letters as languages have an expected distribution of letter frequency, also known as frequency analysis.
+
+= Polyalphabetic substitution - Vigenere
+
+In a polyalphabetic cipher, multiple cipher alphabets are used and one of the most famous is the Vigenere Cipher. The Vigenère cipher consists of several Caesar ciphers in sequence with different shift values [1].
+The method uses a table of all 26 possible shifts of Caesar ciphers, a 26x26 table also called tabula reta or Vigenere Square [5]. To encrypt, the vigenere cipher uses a different alphabet from one of the rows, each time a different shift is used depending on a repeating keyword.
+
+The keyword chosen is CRYPT and it should be repeated to match the length of the plaintext message. For example:
+ Plaintext: VIGENERE
+ Keyword:   CRYPTCRY
+
+It just uses as many alphabets as the number of different letters of the keyword, in this case: 5 {'C','R','Y','P','T'}. For successive letters of the message, we are going to take successive letters of the key string, and encipher each message letter using its corresponding key row [1] on the Vigenere Square. With that, 'V' encrypts with key alphabet on row 'C' giving a 'X' and so on, resulting ciphertext:
+ Ciphertext: XZETGGIC
+
+The decryption process goes on the opposite direction, finding the  is performed by going to the row in the table corresponding to the key, finding the position of the ciphertext letter in this row, and then using the column's label as the plaintext.
+
+The Vigenere cipher can also be expressed algebraically considering the letters A–Z to be taken as the numbers 0–25. For encryption E and decryption D with keyword K as:
+ Ci = Ek(Mi) = (Mi + Ki) mod 26 ,
+ Mi = Dk(Ci) = (Ci - Ki) mod 26 ,
+ M = M1, M2, .. Mi is the message,
+ C = C1, C2, .. Ci is the ciphertext,
+ K = K1, K2, .. Ki is the key obtained by repeating the keyword until the message length.
+
+In order to ilustrate, we will use the first letter of the previous example. To encrypt 'V' with key 'C' would result: (21 + 2) mod 26 = 23 = 'X'
+
+= Cryptoanalysis
+
+There are two properties of a secure cipher: confusion and diffusion. Confusion means to make the relationship of ciphertext and the key as complex as possible; diffusion means dissipating the statistical structure of plaintext over bulk of ciphertext [4].
+
+The idea behind Vigenere cipher is to disguise plaintext letter frequencies in order to make it more difficult to apply frequency analysis. This is achieved by the different shifts or alphabets used depending on the key.
+
+A chosen plaintext attack against Vigenere is trivial, just feed it with 'AAA...' to get the key used. Considering the previous example:
+ M_0('A'): (0 +  2) mod 26 =  2 = 'C' 
+ M_1('A'): (0 + 17) mod 26 = 17 = 'R' 
+ M_2('A'): (0 + 24) mod 26 = 24 = 'Y' 
+ M_3('A'): (0 + 15) mod 26 = 15 = 'P' 
+ M_4('A'): (0 + 19) mod 26 = 19 = 'T' 
+ M_5('A'): (0 +  2) mod 26 =  2 = 'C' 
+ M_6('A'): (0 + 17) mod 26 = 17 = 'R' 
+ M_7('A'): (0 + 24) mod 26 = 24 = 'Y' 
+
+For a known plaintext attack it is almost as trivial, just need to subtract plaintext from encrypted text (mod 26) to produce key.
+ K_0: ('X' - 'V') mod 26 = (23 - 21) mod 26 =  2 = 'C'
+ K_1: ('Z' - 'I') mod 26 = (25 -  8) mod 26 = 17 = 'R'
+ K_2: ('E' - 'G') mod 26 = ( 4 -  6) mod 26 = 24 = 'Y'
+ K_3: ('T' - 'E') mod 26 = (19 -  4) mod 26 = 15 = 'P'
+ K_4: ('G' - 'N') mod 26 = ( 6 - 13) mod 26 = 19 = 'T'
+ K_5: ('G' - 'E') mod 26 = ( 6 -  4) mod 26 =  2 = 'C'
+ K_6: ('I' - 'R') mod 26 = ( 8 - 17) mod 26 = 17 = 'R'
+ K_7: ('C' - 'E') mod 26 = ( 2 -  4) mod 26 = 24 = 'Y'
+
+The ciphertext only attack is considerably more difficult but the weakness of Vigenere is the repeating nature of its key as it is repeated until the message length and the fact that the periodic ciphers are weak Caesar shifts.
+
+== The first step is to find the key length
+
+The Kasiski examination, also called the Kasiski test, takes advantage of the fact that repeated words may, by chance, sometimes be encrypted using the same key letters, leading to repeated groups in the ciphertext [1]. And here lays the strategy from Rajewski: "repetition leads to patterns, cryptoanalysts thrive on patterns".
+
+Let's see the example below:
+ Key:        ABCDABCDABCDABCDABCDABCDABCD
+ Plaintext:  CRYPTOISSHORTFORCRYPTOGRAPHY
+ Ciphertext: CSASTPKVSIQUTGQUCSASTPIUAQJB
+.
+
+There is an easily seen repetition of "CSATP" in the ciphertext. The characters at two different position in the ciphered text are most likely to have been ciphered with the same 3 or more characters of the key. Based on this fact the distance between the two suite of characters is very likely to be a multiple of the key length. The distance between the repetitions is 16, all factors of the distance are possible key lengths, this implies that the key is 16, 8, 4, 2, or 1 characters long. The longer messages make the test more accurate because they usually contain more repeated ciphertext segments.
+
+
+The Friedman test uses the index of coincidence that measures the probability that two random elements are identical. The key length can be estimated based on the language.. (não sei se precisa dos dois métodos?!)
+
+== Break each shift cipher
+
+Now that we know the length of the key, the ciphertext can be rewritten into that many columns, with each column corresponding to a single letter of the key. Each column consists of plaintext that has been encrypted by a single Caesar cipher. Using methods similar to those used to break the Caesar cipher, the letters in the ciphertext can be discovered.
+
+TODO:...
+
+
+
+
+.
+Longer messages make the test more accurate because they usually contain more repeated ciphertext segments.
+
+
+.
+[1] http://en.wikipedia.org/wiki/Vigen%C3%A8re_cipher
+[2] http://en.wikipedia.org/wiki/Substitution_cipher
+[3] http://en.wikipedia.org/wiki/Caesar_cipher
+[4] http://en.wikipedia.org/wiki/Confusion_and_diffusion
+[5] http://en.wikipedia.org/wiki/File:Vigen%C3%A8re_square_shading.svg
+
+
+
+
+
+
+
