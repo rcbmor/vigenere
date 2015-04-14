@@ -28,23 +28,25 @@ def test(plain="MAKEITHAPPEN",key="MATH",cipher="YADLUTAHBPXU"):
     print "vcd:    ", vcd(key,cipher)
     print "-+-"
 
-def main(argv):
+def main():
     description = "Vigenere cipher"
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('--test', dest='test', action='store_true')
     parser.set_defaults(test=False)
     parser.add_argument('--oper', choices=['e', 'd'], help="encrypt or decrypt")
-    parser.add_argument('-k', metavar='key', help='cipher key')
+    parser.add_argument('-k', metavar='key', help='cipher key', required=True)
+    parser.add_argument('-p', metavar='plain', help='plain text')
     parser.add_argument('-i', metavar='in-file', type=argparse.FileType('rt'), help='the file to process')
     args = parser.parse_args()
 
     if args.test:
         test(plain="VIGENERE", key="CRYPT",cipher="XZETGGIC")
         test(plain="THEQUICKBROWNFOXJUMPSOVERTHELAZYDOG", key="CRYPT",cipher="?")
+        test(plain=args.p, key=args.k, cipher="")
         return test()
 
     for i, line in enumerate(args.i):
         print vcd(args.k,line[:-1]) if args.oper == 'd' else vce(args.k,line[:-1])
 
 if __name__ == "__main__":
-   main(sys.argv[1:])
+   main()

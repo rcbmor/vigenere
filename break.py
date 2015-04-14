@@ -16,7 +16,7 @@ def friedman(cipher):
     letters = map(chr, range(65, 91))
     # Count letters.
     freq = dict((key, cipher.count(key)) for key in letters)
-    print freq
+    print "freq: ", freq
     v1 = freq.values()
     n = sum(v1)
 
@@ -24,10 +24,10 @@ def friedman(cipher):
     v3 = [a*b for a,b in zip(v1,v2)]
     nn = sum(v3)
 
-    # index of coincidence
+    # index of coincidence => Equation #5 in article
     ic = nn / (float)(n * (n-1))
     
-    # key length
+    # key length => measure of roughness - deviation from a flat frequency
     l = (0.027 * n) / (((n - 1) * ic) - (0.038 * n) + 0.065)
 
     return (ic,l)
@@ -55,9 +55,9 @@ def kasinski(cipher, sz=3):
         return len(x) - len(y)
 
     sorted_x = sorted(trigrams.items(), key=operator.itemgetter(1), cmp=lencmp, reverse=True)
-    #print "==> Trigrams"
     maxl = len(sorted_x)
     maxl = maxl if maxl < 5 else 5
+    #print "==> Trigrams"
     #for i in range(maxl):
     #    print sorted_x[i]
 
@@ -94,11 +94,11 @@ def kasinski(cipher, sz=3):
             else:
                 factors[n] = 0
 
-    #print "==> most likely key lengths:"
-    #print "(length, count)"
     sorted_x = sorted(factors.items(), key=operator.itemgetter(1), reverse=True)
     maxl = len(sorted_x)
     maxl = maxl if maxl < 5 else 5
+    #print "==> most likely key lengths:"
+    #print "(length, count)"
     #for i in range(maxl):
     #    print sorted_x[i]
 
@@ -124,13 +124,13 @@ def crack(cipher, key_length):
 
         # Count letters.
         freq = dict((key, g.count(key)) for key in letters)
-        #print freq
+        #print "letter freq: ", freq
 
-        # Compute letter dispersion.
+        # Compute letter frequency/probability in each group g (y_i)
         disp = dict((key, float(freq[key]) / len(g)) for key in freq)
-        #print disp
+        #print "dispersion: ", disp
         
-        # Average letter occurence chances in English text.
+        # Average letter occurence chances in English text. (ideal, p_i))
         english_avg = {
             'A': .082, 'B': .015, 'C': .028, 'D': .043,
             'E': .127, 'F': .022, 'G': .020, 'H': .061,
@@ -142,8 +142,8 @@ def crack(cipher, key_length):
         }
 
         #
-        # compute correlations
-        #
+        # compute table M_g => Equation #6
+        # 
         ics = []
         for i in xrange(26):
             r = 0
@@ -152,13 +152,15 @@ def crack(cipher, key_length):
                 f = english_avg[chr(j + 65)]
                 d = disp[chr(((i + j) % 26) + 65)]
                 r += f * d
-            #print " -> '%c' = %.3f" % (l, r)
+                #print "j:",j," i:",i, " f:", f, " d:", d 
+            #print "??? -> '%c' = %.3f" % (l, r)
             ics.append((l, r))
-        #print ics
+            print " %.3f" % r
+        print "M_g: ", ics
 
         #
         # find suiting value.
-        #
+        # 
         desirable = .065
         nearest_value = 999
         nearest_index = 0
@@ -167,7 +169,7 @@ def crack(cipher, key_length):
             if difference < nearest_value:
                 nearest_value = difference
                 nearest_index = i
-        #print " -> nearest: '%c' by %.3f" % ics[nearest_index]
+        print " -> nearest: %d '%c' by %.3f" % (nearest_index, ics[nearest_index][0],ics[nearest_index][1])
         key += ics[nearest_index][0]
 
     return key
@@ -182,11 +184,11 @@ def main(argv):
     # get all ciphertext
     cipher = ''.join(args.i.readlines()).rstrip().upper()
 
-    (ic,kl) = friedman(cipher)
-    print "==> friedman test: ", ic, " kl: ", kl
+    #(ic,kl) = friedman(cipher)
+    #print "==> friedman test: ", ic, " kl: ", kl
 
     key_length = kasinski(cipher, args.s)
-    print "Key length: ", key_length
+    print "kasinski key length: ", key_length
 
     keyw = crack(cipher, key_length)
     print "Key: ", keyw
